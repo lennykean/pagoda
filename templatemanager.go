@@ -10,37 +10,52 @@ import (
 	"text/template"
 )
 
+type watcher interface {
+	Add(string) error
+	Close() error
+}
+
 // TemplateManager autmoatically loads, retrieves and executes templates
 type TemplateManager struct {
 	templateFolder string
 	templates      map[string]*template.Template
 	funcs          template.FuncMap
-	watcher        *fsnotify.Watcher
+	watcher        watcher
+	watchEvents    chan fsnotify.Event
+	readFile       func(string) ([]byte, error)
 }
 
 // NewTemplateManager creates a new TemplateManager based on templateFolder
 func NewTemplateManager(templateFolder string) (templateManager *TemplateManager, err error) {
-	templateManager = &TemplateManager{
-		templateFolder: templateFolder,
-		templates:      make(map[string]*template.Template),
-	}
-	templateManager.funcs = template.FuncMap{
-		"pagoda_template": templateManager.execSubTemplate,
-	}
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		templateManager = nil
 	} else {
-		templateManager.watcher = watcher
-		go templateManager.watchTemplates()
+		templateManager = newTemplateManager(templateFolder, watcher, watcher.Events)
 	}
 	return
+}
+
+func newTemplateManager(templateFolder string, watcher watcher, watchEvents chan fsnotify.Event) *TemplateManager {
+	templateManager := &TemplateManager{
+		templateFolder: templateFolder,
+		templates:      make(map[string]*template.Template),
+		watcher:        watcher,
+		watchEvents:    watchEvents,
+		readFile:       ioutil.ReadFile,
+	}
+	templateManager.funcs = template.FuncMap{
+		"pagoda_template": templateManager.execSubTemplate,
+	}
+	go templateManager.watchTemplates()
+
+	return templateManager
 }
 
 func (templateManager *TemplateManager) watchTemplates() {
 	for {
 		select {
-		case event := <-templateManager.watcher.Events:
+		case event := <-templateManager.watchEvents:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				// invalidate cache if the file changes
 				templateID := templateManager.getTemplateIDFromTemplatePath(event.Name)
@@ -101,7 +116,7 @@ func (templateManager *TemplateManager) getTemplate(templateName string, funcs t
 	templatePath := filepath.Join(templateManager.templateFolder, templateID+".html")
 
 	// find/parse template file
-	file, err := ioutil.ReadFile(templatePath)
+	file, err := templateManager.readFile(templatePath)
 	if err == nil {
 		tpl, err = template.New(templateName).Funcs(funcs).Parse(string(file))
 	}
@@ -140,6 +155,6 @@ func (templateManager *TemplateManager) Execute(templateName string, writer io.W
 }
 
 // Close cleans up resources
-func (templateManager *TemplateManager) Close() {
-	templateManager.watcher.Close()
+func (templateManager *TemplateManager) Close() error {
+	return templateManager.watcher.Close()
 }
