@@ -5,6 +5,7 @@ import (
     "io"
     "io/ioutil"
     "github.com/fsnotify/fsnotify"
+    "path/filepath"
     "strings"
     "text/template"
 )
@@ -86,8 +87,7 @@ func (templateManager *TemplateManager) execSubTemplate(templateName string, arg
     return buffer.String()
 }
 
-// GetTemplate gets a template from the templateFolder based on the templateName
-func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
+func (templateManager *TemplateManager) getTemplate(templateName string, funcs template.FuncMap) (tpl *template.Template, err error) { 
     templateID := templateManager.getTemplateIDFromTemplateName(templateName)
     
     // try to get template from cache
@@ -98,22 +98,35 @@ func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *t
     }   
             
     // get template path    
-    templatePath := templateManager.templateFolder
-    if (!strings.HasSuffix(templateManager.templateFolder, "/")) {
-        templatePath += "/"
-    } 
-    templatePath += templateID + ".html"
+    templatePath := filepath.Join(templateManager.templateFolder, templateID + ".html")
     
     // find/parse template file       
     file, err := ioutil.ReadFile(templatePath)
     if err == nil {                
-        tpl, err = template.New(templateName).Funcs(templateManager.funcs).Parse(string(file))
+        tpl, err = template.New(templateName).Funcs(funcs).Parse(string(file))
     }
     if (err == nil) {
         templateManager.watcher.Add(templatePath)
         templateManager.templates[templateID] = tpl
     }   
     return
+}
+
+// Funcs adds template functions
+func (templateManager *TemplateManager) Funcs(funcs template.FuncMap) {
+    for key, value := range funcs {
+        templateManager.funcs[key] = value
+    }    
+}
+
+// GetTemplate gets a template from the templateFolder based on the templateName
+func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
+    return templateManager.getTemplate(templateName, templateManager.funcs)
+}
+
+// UseLayoutTemplate allows templates to be wrapped with a layout template
+func (templateManager *TemplateManager) UseLayoutTemplate(layoutTemplateName string) *LayoutTemplateManager {
+    return getLayoutTemplateManager(templateManager, layoutTemplateName)
 }
 
 // Execute a template named templateName
