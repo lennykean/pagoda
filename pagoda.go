@@ -93,11 +93,9 @@ func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *t
     // try to get template from cache
     cachedTpl := templateManager.templates[templateID];
     if cachedTpl != nil {
-        println(templateID + " is in the cache")
         tpl = cachedTpl
         return 
     }   
-    println(templateID + " is not in the cache")
             
     // get template path    
     templatePath := templateManager.templateFolder
