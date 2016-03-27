@@ -12,9 +12,9 @@ A simple template manager for go
 * Template caching
 * Template change detection
 
-# Examples
+## Examples
 
-##Executing a template named home/index.html from your template directory
+###Executing a template named home/index.html from your template directory
 ``` Go
 templateManager, _ := pagoda.NewTemplateManager(myTemplateDirectory)
 
@@ -22,7 +22,7 @@ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
     templateManager.Execute("home/index", w, nil)        
 })
 ```
-##Executing a template with sub-templates
+###Executing a template with sub-templates
 ``` Go
 templateManager, _ := pagoda.NewTemplateManager(myTemplateDirectory)
 
@@ -45,8 +45,7 @@ index.html
     </body>
 </html>
 ```
-##Layout pages
-
+###Layout pages
 Pagoda's layout feature allows you to use a site-wide template to maintain a consistant layout across all pages
 
 ``` Go
@@ -60,7 +59,7 @@ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 ```
 layout.html
 
-**Use ```{{pagoda_layout_placeholder .}}``` to set the location you want your template to render in the layout template ** 
+**Use ```{{pagoda_layout_placeholder .}}``` to set the location you want your template to render in the layout template** 
 ``` html
 <html>
     <head>
