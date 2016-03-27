@@ -6,7 +6,7 @@ import (
     "io/ioutil"
     "github.com/fsnotify/fsnotify"
     "strings"
-	"text/template"
+    "text/template"
 )
 
 // TemplateManager autmoatically loads, retrieves and executes templates
@@ -27,9 +27,9 @@ func NewTemplateManager(templateFolder string) (templateManager *TemplateManager
         "pagoda_template": templateManager.execSubTemplate,
     }
     watcher, err := fsnotify.NewWatcher()
-	if err != nil {
+    if err != nil {
         templateManager = nil
-	} else {          
+    } else {          
         templateManager.watcher = watcher
         go templateManager.watchTemplates()
     }    
