@@ -7,12 +7,12 @@ import (
 
 // LayoutTemplateManager loads and executes templates with a layout page
 type LayoutTemplateManager struct {
-	TemplateManager
+	*TemplateManager
 	layoutTemplateName string
 }
 
 func getLayoutTemplateManager(templateManager *TemplateManager, layoutTemplateName string) *LayoutTemplateManager {
-	return &LayoutTemplateManager{*templateManager, layoutTemplateName}
+	return &LayoutTemplateManager{templateManager, layoutTemplateName}
 }
 
 // GetTemplate gets a template from the templateFolder based on the templateName
