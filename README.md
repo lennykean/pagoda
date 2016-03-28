@@ -2,7 +2,7 @@
 
 [![GoDoc](https://godoc.org/github.com/lennykean/pagoda?status.svg)](https://godoc.org/github.com/lennykean/pagoda) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/lennykean/pagoda)](https://goreportcard.com/report/github.com/lennykean/pagoda) 
-[![Coverage](http://gocover.io/_badge/github.com/lennykean/pagoda)](http://gocover.io/github.com/lennykean/pagoda) 
+[![Coverage](http://gocover.io/_badge/github.com/lennykean/pagoda)](http://gocover.io/_github.com/lennykean/pagoda) 
 
 A simple template manager for go
 
