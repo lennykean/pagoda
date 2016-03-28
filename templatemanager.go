@@ -89,7 +89,7 @@ func (templateManager *TemplateManager) execSubTemplate(templateName string, arg
 	if err != nil {
 		return ""
 	}
-    
+
 	var data interface{}
 	if len(args) > 0 {
 		data = args[0]
