@@ -64,18 +64,6 @@ func (templateManager *TemplateManager) watchTemplates() {
 	}
 }
 
-func (templateManager *TemplateManager) getTemplateIDFromTemplatePath(templatePath string) string {
-	templateID := templatePath[len(templateManager.templateFolder):]
-
-	if strings.HasPrefix(templateID, "/") {
-		templateID = templateID[1:]
-	}
-	if strings.HasSuffix(templateID, ".html") {
-		templateID = templateID[:len(templateID)-5]
-	}
-	return templateID
-}
-
 func (templateManager *TemplateManager) getTemplateIDFromTemplateName(templateName string) string {
 	templateID := templateName
 	if strings.HasSuffix(templateID, ".html") {
