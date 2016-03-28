@@ -52,7 +52,7 @@ func Test_GetTemplate(t *testing.T) {
 	if mockWatcher.watchedList[0] != "testFolder/testTemplate.html" {
 		t.Error("failed to watch template file for changes")
 	}
-	if templateManager.templates["testTemplate"] == nil {
+	if templateManager.rootTemplate.Lookup("testTemplate") == nil {
 		t.Error("failed to add template to cache")
 	}
 }
@@ -90,7 +90,7 @@ func Test_Invalidate_Cache_On_Change(t *testing.T) {
 	}
 
 	// Assert
-	if len(templateManager.templates) != 0 {
+	if templateManager.rootTemplate.Lookup("testTemplate") != nil {
 		t.Fail()
 	}
 }
@@ -166,6 +166,33 @@ func Test_Execute_LayoutTemplate(t *testing.T) {
 
 	// Assert
 	expected := "<html><body><h1>test</h1></body></html>"
+	if result != expected {
+		t.Errorf("template execution failed, expected: %v, got %v", expected, result)
+	}
+}
+
+func Test_Define_Across_Templates(t *testing.T) {
+	// Arrange
+	events := make(chan fsnotify.Event)
+	mockWatcher := mockWatcher{}
+	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
+	templateManager.readFile = func(name string) ([]byte, error) {
+		if name == "testFolder/testTemplate.html" {
+			return []byte("<div><div>{{pagoda_template \"subTemplate\"}}</div><div>{{pagoda_template \"definedTemplate\"}}</div></div>"), nil
+		}
+		if name == "testFolder/subTemplate.html" {
+			return []byte("{{define \"definedTemplate\"}}defined-template-render{{end}}sub-template-render"), nil
+		}
+		return []byte{}, nil
+	}
+
+	// Act
+	buffer := bytes.Buffer{}
+	templateManager.Execute("testTemplate", &buffer, nil)
+	result := buffer.String()
+
+	// Assert
+	expected := "<div><div>sub-template-render</div><div>defined-template-render</div></div>"
 	if result != expected {
 		t.Errorf("template execution failed, expected: %v, got %v", expected, result)
 	}

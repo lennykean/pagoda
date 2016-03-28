@@ -18,7 +18,7 @@ type watcher interface {
 // TemplateManager autmoatically loads, retrieves and executes templates
 type TemplateManager struct {
 	templateFolder string
-	templates      map[string]*template.Template
+	rootTemplate   *template.Template
 	funcs          template.FuncMap
 	watcher        watcher
 	watchEvents    chan fsnotify.Event
@@ -39,7 +39,7 @@ func NewTemplateManager(templateFolder string) (templateManager *TemplateManager
 func newTemplateManager(templateFolder string, watcher watcher, watchEvents chan fsnotify.Event) *TemplateManager {
 	templateManager := &TemplateManager{
 		templateFolder: templateFolder,
-		templates:      make(map[string]*template.Template),
+		rootTemplate:   template.New("ROOT"),
 		watcher:        watcher,
 		watchEvents:    watchEvents,
 		readFile:       ioutil.ReadFile,
@@ -58,8 +58,7 @@ func (templateManager *TemplateManager) watchTemplates() {
 		case event := <-templateManager.watchEvents:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				// invalidate cache if the file changes
-				templateID := templateManager.getTemplateIDFromTemplatePath(event.Name)
-				delete(templateManager.templates, templateID)
+				templateManager.rootTemplate = template.New("ROOT")
 			}
 		}
 	}
@@ -90,7 +89,7 @@ func (templateManager *TemplateManager) execSubTemplate(templateName string, arg
 	if err != nil {
 		return ""
 	}
-
+    
 	var data interface{}
 	if len(args) > 0 {
 		data = args[0]
@@ -106,7 +105,7 @@ func (templateManager *TemplateManager) getTemplate(templateName string, funcs t
 	templateID := templateManager.getTemplateIDFromTemplateName(templateName)
 
 	// try to get template from cache
-	cachedTpl := templateManager.templates[templateID]
+	cachedTpl := templateManager.rootTemplate.Lookup(templateID)
 	if cachedTpl != nil {
 		tpl = cachedTpl
 		return
@@ -118,11 +117,10 @@ func (templateManager *TemplateManager) getTemplate(templateName string, funcs t
 	// find/parse template file
 	file, err := templateManager.readFile(templatePath)
 	if err == nil {
-		tpl, err = template.New(templateName).Funcs(funcs).Parse(string(file))
+		tpl, err = templateManager.rootTemplate.New(templateID).Funcs(funcs).Parse(string(file))
 	}
 	if err == nil {
 		templateManager.watcher.Add(templatePath)
-		templateManager.templates[templateID] = tpl
 	}
 	return
 }
