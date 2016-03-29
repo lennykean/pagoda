@@ -15,7 +15,7 @@ type watcher interface {
 	Close() error
 }
 
-// TemplateManager autmoatically loads, retrieves and executes templates
+// TemplateManager automatically loads, retrieves and executes templates
 type TemplateManager struct {
 	templateFolder string
 	rootTemplate   *template.Template
