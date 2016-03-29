@@ -3,8 +3,8 @@ package pagoda
 import (
 	"bytes"
 	"github.com/fsnotify/fsnotify"
+	"os"
 	"testing"
-    "os"
 )
 
 type mockWatcher struct {
@@ -50,7 +50,7 @@ func Test_GetTemplate(t *testing.T) {
 	templateManager.GetTemplate("testTemplate")
 
 	// Assert
-	if mockWatcher.watchedList[0] != "testFolder" + string(os.PathSeparator) + "testTemplate.html" {
+	if mockWatcher.watchedList[0] != "testFolder"+string(os.PathSeparator)+"testTemplate.html" {
 		t.Error("failed to watch template file for changes")
 	}
 	if templateManager.rootTemplate.Lookup("testTemplate") == nil {
@@ -123,10 +123,10 @@ func Test_Execute_SubTemplate(t *testing.T) {
 	mockWatcher := mockWatcher{}
 	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
 	templateManager.readFile = func(name string) ([]byte, error) {
-		if name == "testFolder" + string(os.PathSeparator) + "testTemplate.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"testTemplate.html" {
 			return []byte("<div>{{pagoda_template \"subTemplate\" .}}</div>"), nil
 		}
-		if name == "testFolder" + string(os.PathSeparator) + "subTemplate.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"subTemplate.html" {
 			return []byte("<h1>{{.}}</h1>"), nil
 		}
 		return []byte{}, nil
@@ -150,10 +150,10 @@ func Test_Execute_LayoutTemplate(t *testing.T) {
 	mockWatcher := mockWatcher{}
 	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
 	templateManager.readFile = func(name string) ([]byte, error) {
-		if name == "testFolder" + string(os.PathSeparator) + "layout.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"layout.html" {
 			return []byte("<html><body>{{pagoda_layout_placeholder .}}</body></html>"), nil
 		}
-		if name == "testFolder" + string(os.PathSeparator) + "testTemplate.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"testTemplate.html" {
 			return []byte("<h1>{{.}}</h1>"), nil
 		}
 		return []byte{}, nil
@@ -178,13 +178,13 @@ func Test_LayoutTemplate_Does_Not_Cache_Inner_Template(t *testing.T) {
 	mockWatcher := mockWatcher{}
 	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
 	templateManager.readFile = func(name string) ([]byte, error) {
-		if name == "testFolder" + string(os.PathSeparator) + "layout.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"layout.html" {
 			return []byte("<html><body>{{pagoda_layout_placeholder .}}</body></html>"), nil
 		}
-		if name == "testFolder" + string(os.PathSeparator) + "testTemplate1.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"testTemplate1.html" {
 			return []byte("<h1>{{.}}</h1>"), nil
 		}
-		if name == "testFolder" + string(os.PathSeparator) + "testTemplate2.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"testTemplate2.html" {
 			return []byte("<h2>{{.}}</h2>"), nil
 		}
 		return []byte{}, nil
@@ -222,10 +222,10 @@ func Test_Define_Across_Templates(t *testing.T) {
 	mockWatcher := mockWatcher{}
 	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
 	templateManager.readFile = func(name string) ([]byte, error) {
-		if name == "testFolder" + string(os.PathSeparator) + "testTemplate.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"testTemplate.html" {
 			return []byte("<div><div>{{pagoda_template \"subTemplate\"}}</div><div>{{pagoda_template \"definedTemplate\"}}</div></div>"), nil
 		}
-		if name == "testFolder" + string(os.PathSeparator) + "subTemplate.html" {
+		if name == "testFolder"+string(os.PathSeparator)+"subTemplate.html" {
 			return []byte("{{define \"definedTemplate\"}}defined-template-render{{end}}sub-template-render"), nil
 		}
 		return []byte{}, nil

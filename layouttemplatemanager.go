@@ -15,23 +15,24 @@ func getLayoutTemplateManager(templateManager *TemplateManager, layoutTemplateNa
 	return &LayoutTemplateManager{templateManager, layoutTemplateName}
 }
 
-func (layoutTemplateManager *LayoutTemplateManager) getLayoutTemplateID(templateName string) string {        
-    layoutTemplateName := layoutTemplateManager.getTemplateName(layoutTemplateManager.layoutTemplate)
-    templateName = layoutTemplateManager.getTemplateName(templateName)
-    
-    return layoutTemplateName + ":" + templateName
-}
-
 // GetTemplate gets a template from the templateFolder based on the templateName
 func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
+	templateName = layoutTemplateManager.getTemplateName(templateName)
+
 	funcs := layoutTemplateManager.funcs
 	funcs["pagoda_layout_placeholder"] = func(data interface{}) string {
 		return layoutTemplateManager.execSubTemplate(templateName, data)
 	}
-    layoutTemplateName := layoutTemplateManager.getTemplateName(layoutTemplateManager.layoutTemplate)
-    layoutTemplateID := layoutTemplateManager.getLayoutTemplateID(templateName)
-    
-	return layoutTemplateManager.getTemplate(layoutTemplateName, layoutTemplateID, funcs)
+
+	rootTemplate := layoutTemplateManager.layoutTemplates[templateName]
+	if rootTemplate == nil {
+		rootTemplate = template.New("ROOT")
+		layoutTemplateManager.layoutTemplates[templateName] = rootTemplate
+	}
+
+	layoutTemplateName := layoutTemplateManager.getTemplateName(layoutTemplateManager.layoutTemplate)
+
+	return layoutTemplateManager.getTemplate(layoutTemplateName, funcs, rootTemplate)
 }
 
 // Execute a template named templateName
