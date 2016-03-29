@@ -64,7 +64,7 @@ func (templateManager *TemplateManager) watchTemplates() {
 	}
 }
 
-func (templateManager *TemplateManager) getTemplateIDFromTemplateName(templateName string) string {
+func (templateManager *TemplateManager) getTemplateName(templateName string) string {
 	templateID := templateName
 	if strings.HasSuffix(templateID, ".html") {
 		templateID = templateID[:len(templateID)-5]
@@ -89,9 +89,7 @@ func (templateManager *TemplateManager) execSubTemplate(templateName string, arg
 	return buffer.String()
 }
 
-func (templateManager *TemplateManager) getTemplate(templateName string, funcs template.FuncMap) (tpl *template.Template, err error) {
-	templateID := templateManager.getTemplateIDFromTemplateName(templateName)
-
+func (templateManager *TemplateManager) getTemplate(templateName string, templateID string, funcs template.FuncMap) (tpl *template.Template, err error) {
 	// try to get template from cache
 	cachedTpl := templateManager.rootTemplate.Lookup(templateID)
 	if cachedTpl != nil {
@@ -100,7 +98,7 @@ func (templateManager *TemplateManager) getTemplate(templateName string, funcs t
 	}
 
 	// get template path
-	templatePath := filepath.Join(templateManager.templateFolder, templateID+".html")
+	templatePath := filepath.Join(templateManager.templateFolder, templateName+".html")
 
 	// find/parse template file
 	file, err := templateManager.readFile(templatePath)
@@ -121,8 +119,9 @@ func (templateManager *TemplateManager) Funcs(funcs template.FuncMap) {
 }
 
 // GetTemplate gets a template from the templateFolder based on the templateName
-func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
-	return templateManager.getTemplate(templateName, templateManager.funcs)
+func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {    
+	templateName = templateManager.getTemplateName(templateName)
+	return templateManager.getTemplate(templateName, templateName, templateManager.funcs)
 }
 
 // UseLayoutTemplate allows templates to be wrapped with a layout template
