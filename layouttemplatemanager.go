@@ -19,11 +19,13 @@ func getLayoutTemplateManager(templateManager *TemplateManager, layoutTemplateNa
 func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
 	templateName = layoutTemplateManager.getTemplateName(templateName)
 
+	// add layout placeholder func
 	funcs := layoutTemplateManager.funcs
 	funcs["pagoda_layout_placeholder"] = func(data interface{}) string {
 		return layoutTemplateManager.execSubTemplate(templateName, data)
 	}
 
+	// try to get the layout root template from cache, otherwise create a new one
 	rootTemplate := layoutTemplateManager.layoutTemplates[templateName]
 	if rootTemplate == nil {
 		rootTemplate = template.New("ROOT")
@@ -31,7 +33,6 @@ func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName str
 	}
 
 	layoutTemplateName := layoutTemplateManager.getTemplateName(layoutTemplateManager.layoutTemplate)
-
 	return layoutTemplateManager.getTemplate(layoutTemplateName, funcs, rootTemplate)
 }
 
