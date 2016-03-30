@@ -44,13 +44,17 @@ func newTemplateManager(templateFolder string, watcher watcher, watchEvents chan
 		watchEvents:     watchEvents,
 		readFile:        ioutil.ReadFile,
 	}
-	templateManager.rootTemplate = template.New("ROOT").Funcs(template.FuncMap{
-		"pagoda_template": templateManager.execSubTemplate,
-	})
+	templateManager.rootTemplate = templateManager.createRootTemplate()
 
 	go templateManager.watchTemplates()
 
 	return templateManager
+}
+
+func (templateManager *TemplateManager) createRootTemplate() *template.Template {
+	return template.New("ROOT").Funcs(template.FuncMap{
+		"pagoda_template": templateManager.execSubTemplate,
+	})
 }
 
 func (templateManager *TemplateManager) watchTemplates() {

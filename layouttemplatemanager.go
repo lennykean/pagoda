@@ -23,7 +23,7 @@ func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName str
 	// try to get the layout root template from cache, otherwise create a new one
 	rootTemplate := layoutTemplateManager.layoutTemplates[templateName]
 	if rootTemplate == nil {
-		rootTemplate = template.New("ROOT").Funcs(layoutTemplateManager.funcs)
+		rootTemplate = layoutTemplateManager.createRootTemplate().Funcs(layoutTemplateManager.funcs)
 		layoutTemplateManager.layoutTemplates[templateName] = rootTemplate
 	}
 
