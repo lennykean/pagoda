@@ -34,7 +34,7 @@ func Test_NewTemplateManager(t *testing.T) {
 	templateManager := newTemplateManager("testFolder", &mockWatcher, events)
 
 	// Assert
-	if templateManager == nil || len(templateManager.funcs) != 1 || templateManager.watcher != &mockWatcher {
+	if templateManager == nil || templateManager.watcher != &mockWatcher {
 		t.Error("failed to create template manager")
 	}
 }
