@@ -53,7 +53,7 @@ func Test_GetTemplate(t *testing.T) {
 	if mockWatcher.watchedList[0] != "testFolder"+string(os.PathSeparator)+"testTemplate.html" {
 		t.Error("failed to watch template file for changes")
 	}
-	if templateManager.rootTemplate.Lookup("testTemplate") == nil {
+	if templateManager.rootTemplates[defaultRootTemplateName].Lookup("testTemplate") == nil {
 		t.Error("failed to add template to cache")
 	}
 }
@@ -91,7 +91,7 @@ func Test_Invalidate_Cache_On_Change(t *testing.T) {
 	}
 
 	// Assert
-	if templateManager.rootTemplate.Lookup("testTemplate") != nil {
+	if len(templateManager.rootTemplates) > 0 {
 		t.Fail()
 	}
 }

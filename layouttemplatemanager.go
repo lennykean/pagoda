@@ -9,23 +9,15 @@ import (
 type LayoutTemplateManager struct {
 	*TemplateManager
 	layoutTemplate string
-	funcs          template.FuncMap
 }
 
 func getLayoutTemplateManager(templateManager *TemplateManager, layoutTemplateName string) *LayoutTemplateManager {
-	return &LayoutTemplateManager{templateManager, layoutTemplateName, template.FuncMap{}}
+	return &LayoutTemplateManager{templateManager, layoutTemplateName}
 }
 
 // GetTemplate gets a template from the templateFolder based on the templateName
 func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
 	templateName = layoutTemplateManager.getTemplateName(templateName)
-
-	// try to get the layout root template from cache, otherwise create a new one
-	rootTemplate := layoutTemplateManager.layoutTemplates[templateName]
-	if rootTemplate == nil {
-		rootTemplate = layoutTemplateManager.createRootTemplate().Funcs(layoutTemplateManager.funcs)
-		layoutTemplateManager.layoutTemplates[templateName] = rootTemplate
-	}
 
 	// add layout placeholder func
 	funcs := template.FuncMap{
@@ -33,9 +25,10 @@ func (layoutTemplateManager *LayoutTemplateManager) GetTemplate(templateName str
 			return layoutTemplateManager.execSubTemplate(templateName, data)
 		},
 	}
+	layoutTemplateManager.Funcs(funcs)
 
 	layoutTemplateName := layoutTemplateManager.getTemplateName(layoutTemplateManager.layoutTemplate)
-	return layoutTemplateManager.getTemplate(layoutTemplateName, rootTemplate, funcs)
+	return layoutTemplateManager.getTemplate(layoutTemplateName, templateName)
 }
 
 // Execute a template named templateName
@@ -46,14 +39,4 @@ func (layoutTemplateManager *LayoutTemplateManager) Execute(templateName string,
 		err = tpl.Execute(writer, data)
 	}
 	return
-}
-
-// Funcs adds template functions
-func (layoutTemplateManager *LayoutTemplateManager) Funcs(funcs template.FuncMap) {
-	for _, rootTemplate := range layoutTemplateManager.layoutTemplates {
-		rootTemplate.Funcs(funcs)
-	}
-	for name, function := range funcs {
-		layoutTemplateManager.funcs[name] = function
-	}
 }

@@ -15,14 +15,16 @@ type watcher interface {
 	Close() error
 }
 
+const defaultRootTemplateName = ":DEFAULT_ROOT_TEMPLATE:"
+
 // TemplateManager automatically loads, retrieves and executes templates
 type TemplateManager struct {
-	templateFolder  string
-	rootTemplate    *template.Template
-	layoutTemplates map[string]*template.Template
-	watcher         watcher
-	watchEvents     chan fsnotify.Event
-	readFile        func(string) ([]byte, error)
+	templateFolder string
+	rootTemplates  map[string]*template.Template
+	watcher        watcher
+	watchEvents    chan fsnotify.Event
+	readFile       func(string) ([]byte, error)
+	funcs          template.FuncMap
 }
 
 // NewTemplateManager creates a new TemplateManager based on templateFolder
@@ -38,23 +40,22 @@ func NewTemplateManager(templateFolder string) (templateManager *TemplateManager
 
 func newTemplateManager(templateFolder string, watcher watcher, watchEvents chan fsnotify.Event) *TemplateManager {
 	templateManager := &TemplateManager{
-		templateFolder:  templateFolder,
-		layoutTemplates: make(map[string]*template.Template),
-		watcher:         watcher,
-		watchEvents:     watchEvents,
-		readFile:        ioutil.ReadFile,
+		templateFolder: templateFolder,
+		rootTemplates:  make(map[string]*template.Template),
+		watcher:        watcher,
+		watchEvents:    watchEvents,
+		readFile:       ioutil.ReadFile,
 	}
-	templateManager.rootTemplate = templateManager.createRootTemplate()
-
+	templateManager.funcs = template.FuncMap{
+		"pagoda_template": templateManager.execSubTemplate,
+	}
 	go templateManager.watchTemplates()
 
 	return templateManager
 }
 
-func (templateManager *TemplateManager) createRootTemplate() *template.Template {
-	return template.New("ROOT").Funcs(template.FuncMap{
-		"pagoda_template": templateManager.execSubTemplate,
-	})
+func (templateManager *TemplateManager) createRootTemplate(name string) {
+	templateManager.rootTemplates[name] = template.New(name).Funcs(templateManager.funcs)
 }
 
 func (templateManager *TemplateManager) watchTemplates() {
@@ -63,8 +64,7 @@ func (templateManager *TemplateManager) watchTemplates() {
 		case event := <-templateManager.watchEvents:
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				// invalidate cache if the file changes
-				templateManager.rootTemplate = template.New("ROOT")
-				templateManager.layoutTemplates = make(map[string]*template.Template)
+				templateManager.rootTemplates = make(map[string]*template.Template)
 			}
 		}
 	}
@@ -95,9 +95,14 @@ func (templateManager *TemplateManager) execSubTemplate(templateName string, arg
 	return buffer.String()
 }
 
-func (templateManager *TemplateManager) getTemplate(templateName string, rootTemplate *template.Template, funcs template.FuncMap) (tpl *template.Template, err error) {
+func (templateManager *TemplateManager) getTemplate(templateName string, rootTemplateName string) (tpl *template.Template, err error) {
+	// try to find the root template in cache, create a new one if not found
+	if templateManager.rootTemplates[rootTemplateName] == nil {
+		templateManager.createRootTemplate(rootTemplateName)
+	}
+
 	// try to get template from cache
-	cachedTpl := rootTemplate.Lookup(templateName)
+	cachedTpl := templateManager.rootTemplates[rootTemplateName].Lookup(templateName)
 	if cachedTpl != nil {
 		tpl = cachedTpl
 		return
@@ -109,7 +114,7 @@ func (templateManager *TemplateManager) getTemplate(templateName string, rootTem
 	// find/parse template file
 	file, err := templateManager.readFile(templatePath)
 	if err == nil {
-		tpl, err = rootTemplate.New(templateName).Funcs(funcs).Parse(string(file))
+		tpl, err = templateManager.rootTemplates[rootTemplateName].New(templateName).Parse(string(file))
 	}
 	if err == nil {
 		templateManager.watcher.Add(templatePath)
@@ -119,13 +124,18 @@ func (templateManager *TemplateManager) getTemplate(templateName string, rootTem
 
 // Funcs adds template functions
 func (templateManager *TemplateManager) Funcs(funcs template.FuncMap) {
-	templateManager.rootTemplate.Funcs(funcs)
+	for _, rootTemplate := range templateManager.rootTemplates {
+		rootTemplate.Funcs(funcs)
+	}
+	for name, function := range funcs {
+		templateManager.funcs[name] = function
+	}
 }
 
 // GetTemplate gets a template from the templateFolder based on the templateName
 func (templateManager *TemplateManager) GetTemplate(templateName string) (tpl *template.Template, err error) {
 	templateName = templateManager.getTemplateName(templateName)
-	return templateManager.getTemplate(templateName, templateManager.rootTemplate, template.FuncMap{})
+	return templateManager.getTemplate(templateName, defaultRootTemplateName)
 }
 
 // UseLayoutTemplate allows templates to be wrapped with a layout template
